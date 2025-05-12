@@ -36,7 +36,6 @@ function getLicenseYears(startDate) {
 
 function price(licenseStart, pickupDate, dropoffDate, type, age) {
   const days = getDays(pickupDate, dropoffDate);
-  const season = getSeason(pickupDate, dropoffDate);
   const licenseYears = getLicenseYears(licenseStart);
 
   if (age < 18) return "Driver too young - cannot quote the price";
@@ -46,13 +45,22 @@ function price(licenseStart, pickupDate, dropoffDate, type, age) {
 
   let rentalPrice = age;
 
-  if (licenseYears < 3 && season === "High") rentalPrice += 15;
-  if (licenseYears < 2) rentalPrice *= 1.3;
-  if (type === "Racer" && age <= 25 && season === "High") rentalPrice *= 1.5;
-  if (season === "High") rentalPrice *= 1.15;
-  if (days > 10 && season === "Low") rentalPrice *= 0.9;
+  const start = new Date(pickupDate);
+  let weekendDays = 0;
+  for (let i = 0; i < days; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const dow = d.getDay(); // 0 = Sunday, 6 = Saturday
+    if (dow === 0 || dow === 6) weekendDays++;
+  }
+
+  const weekdayDays = days - weekendDays;
+  const dailyRate = rentalPrice / days;
+  rentalPrice = (dailyRate * weekdayDays) + (dailyRate * weekendDays * 1.05);
 
   return `$${rentalPrice.toFixed(2)}`;
 }
+
+
 
 exports.price = price;
